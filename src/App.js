@@ -10,6 +10,7 @@ class App extends Component {
       images: []
     };
     this.imageUpload = this.imageUpload.bind(this);
+    this.imageRemove = this.imageRemove.bind(this);
   }
 
   imageUpload(e) {
@@ -34,6 +35,26 @@ class App extends Component {
       });
   }
 
+  imageRemove(deletehash) {
+    const { REACT_APP_CLIENT_ID } = process.env;
+    this.setState({ loading: true });
+    fetch(`https://api.imgur.com/3/image/${deletehash}`, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Client-ID ${REACT_APP_CLIENT_ID}`
+      }
+    })
+      .then(result => result.json())
+      .then(data => {
+        this.setState({ loading: false });
+        if (!data.success) return alert("실패");
+        this.setState({
+          images: this.state.images.filter(i => i.deletehash !== deletehash)
+        });
+      });
+  }
+
   render() {
     const { images, loading } = this.state;
     return (
@@ -47,7 +68,10 @@ class App extends Component {
               ? images.map(i => {
                   return (
                     <>
-                      <img src={i.link} />
+                      <img
+                        src={i.link}
+                        onClick={() => this.imageRemove(i.deletehash)}
+                      />
                     </>
                   );
                 })
