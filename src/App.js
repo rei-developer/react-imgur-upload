@@ -3,14 +3,9 @@ import logo from './logo.svg'
 import './App.css'
 
 class App extends Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      loading: false,
-      images: []
-    }
-    this.imageUpload = this.imageUpload.bind(this)
-    this.imageRemove = this.imageRemove.bind(this)
+  state = {
+    loading: false,
+    images: []
   }
 
   imageUpload = async (e) => {
@@ -90,9 +85,10 @@ class App extends Component {
     return (
       <div className='App'>
         <header className='App-header'>
-          <img src={logo} className='App-logo' alt='logo' />
-          {loading ? 'true' : 'false'}
+          loading : {loading ? 'true' : 'false'}
+          <br />
           length : {images.length}
+          <br />
           <div>
             {images.length > 0
               ? images.map(i => {
@@ -107,6 +103,7 @@ class App extends Component {
               })
               : ''}
           </div>
+          <br />
           <form>
             <input
               type='file'
@@ -115,6 +112,7 @@ class App extends Component {
               onChange={this.imageUpload}
             />
           </form>
+          <br />
           <button onClick={this.imageRemoveAll}>이미지 전부 삭제</button>
         </header>
       </div>
