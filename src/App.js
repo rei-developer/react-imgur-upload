@@ -1,13 +1,22 @@
 import React from 'react'
+import {
+  Form,
+  FormGroup,
+  Label,
+  CustomInput,
+  Button
+} from 'reactstrap'
 import './App.css'
+import 'bootstrap/dist/css/bootstrap.min.css'
 
 class App extends React.Component {
   state = {
     loading: false,
-    images: []
+    images: [],
+    selectedImageDeletehash: ''
   }
 
-  imageUpload = async (e) => {
+  imageUpload = async e => {
     this.setState({ loading: true })
     let files = []
     for (const file of e.target.files)
@@ -30,8 +39,19 @@ class App extends React.Component {
     })
     const data = await response.json()
     if (data.success) {
-      console.log(`${index}번째 이미지 업로드 성공!`)
-      this.setState({ images: [...this.state.images, { link: data.data.link, deletehash: data.data.deletehash }] })
+      const name = files[index].name
+      console.log(`${index}번째 이미지 (${name}) 업로드 성공!`)
+      this.setState({
+        images: [
+          ...this.state.images,
+          {
+            name,
+            link: data.data.link,
+            deletehash: data.data.deletehash
+          }
+        ],
+        selectedImageDeletehash: data.data.deletehash
+      })
     } else {
       console.log(`${index}번째 이미지 업로드 실패...`)
     }
@@ -39,7 +59,7 @@ class App extends React.Component {
     await this.imageUploadToImgur(files, index + 1)
   }
 
-  imageRemove = async (deletehash) => {
+  imageRemove = async deletehash => {
     const { REACT_APP_CLIENT_ID } = process.env
     this.setState({ loading: true })
     const response = await fetch(`https://api.imgur.com/3/image/${deletehash}`, {
@@ -52,7 +72,14 @@ class App extends React.Component {
     const data = await response.json()
     this.setState({ loading: false })
     if (!data.success) return console.log('이미지 삭제 실패...')
-    this.setState({ images: this.state.images.filter(i => i.deletehash !== deletehash) })
+
+    console.log(this.state.images.filter((item, index) => index === 0)[0].deletehash)
+
+    const newDeletehash = this.state.images.length > 0 ? this.state.images.filter((item, index) => index === 0)[0].deletehash : ''
+    this.setState({
+      images: this.state.images.filter(i => i.deletehash !== deletehash),
+      selectedImageDeletehash: newDeletehash
+    })
   }
 
   imageRemoveAll = async () => {
@@ -79,41 +106,77 @@ class App extends React.Component {
       })
   }
 
+  setselectedImageDeletehash = e => {
+    this.setState({ selectedImageDeletehash: e.target.value })
+  }
+
+  selectedImageRemove = async () => {
+    const { selectedImageDeletehash } = this.state
+    if (selectedImageDeletehash === '') return console.log('선택된게 없네?')
+    await this.imageRemove(selectedImageDeletehash)
+  }
+
   render() {
     const { images, loading } = this.state
     return (
       <div className='App'>
-        <header className='App-header'>
-          loading : {loading ? 'true' : 'false'}
-          <br />
-          length : {images.length}
-          <br />
-          <div>
-            {images.length > 0
-              ? images.map(i => {
-                return (
-                  <>
-                    <img
-                      src={i.link}
-                      onClick={() => this.imageRemove(i.deletehash)}
-                    />
-                  </>
-                )
-              })
-              : ''}
-          </div>
-          <br />
-          <form>
-            <input
+        loading : {loading ? 'true' : 'false'}
+        <br />
+        length : {images.length}
+        <br />
+        <div>
+          {images.length > 0
+            ? images.map(i => {
+              return (
+                <img src={i.link} />
+              )
+            })
+            : ''}
+        </div>
+        <br />
+        <Form>
+          <FormGroup>
+            <Label for='fileBrowser'>File (Up to 10MB)</Label>
+            <CustomInput
               type='file'
               multiple='multiple'
-              className='input-image'
+              id='fileBrowser'
+              label='이곳에 이미지를 올려보세요!'
               onChange={this.imageUpload}
             />
-          </form>
-          <br />
-          <button onClick={this.imageRemoveAll}>이미지 전부 삭제</button>
-        </header>
+          </FormGroup>
+          {images.length > 0 ? (
+            <>
+              <FormGroup>
+                <Label for='filesList'>Custom Multiple Select</Label>
+                <CustomInput
+                  type='select'
+                  id='filesList'
+                  value={this.state.selectedImageDeletehash}
+                  onChange={this.setselectedImageDeletehash}
+                >
+                  {images.map(i => {
+                    return (
+                      <option value={i.deletehash}>{i.name}</option>
+                    )
+                  })}
+                </CustomInput>
+              </FormGroup>
+              <Button
+                className='mr-2'
+                onClick={this.selectedImageRemove}
+              >
+                선택 이미지 삭제
+              </Button>
+            </>
+          ) : ''}
+          <Button
+            color='danger'
+            onClick={this.imageRemoveAll}
+          >
+            이미지 전부 삭제
+          </Button>
+        </Form>
       </div>
     )
   }
